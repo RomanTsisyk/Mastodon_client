@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Mastodon</string>
+    <string name="author_avatar">Author avatar</string>
+    <string name="unknown_error_occurred">Unknown error occurred</string>
+    <string name="no_items_found">No items found</string>
+    <string name="try_adjusting_your_search_or_check_back_later">Try adjusting your search or check back later</string>
+    <string name="welcome_to_mastodon_timeline">Welcome to Mastodon Timeline</string>
+    <string name="real_time_timeline">Real-time Timeline</string>
+    <string name="view_and_interact_with_posts_from_the_mastodon_network_in_real_time">View and interact with posts from the Mastodon network in real-time</string>
+    <string name="search_content">Search Content</string>
+    <string name="use_the_search_bar_to_find_specific_posts_or_topics">Use the search bar to find specific posts or topics</string>
+    <string name="interactive_gestures">Interactive Gestures</string>
+    <string name="swipe_posts_to_dismiss_them_from_your_timeline">Swipe posts to dismiss them from your timeline</string>
+    <string name="get_started">Get Started</string>
+    <string name="error">Error</string>
+    <string name="limited_search_in_offline_mode">Limited search in offline mode</string>
+    <string name="only_showing_results_from_cached_content">Only showing results from cached content</string>
+    <string name="retry">Retry</string>
+</resources>
