@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,9 +35,12 @@ class MastodonClient @Inject constructor(
             .filter { it == NetworkStatus.Available }
             .flatMapLatest {
                 Timber.d("Network available, connecting to stream")
-                connectionState.value = ConnectionState.Connected
 
                 streamingService.streamPublicTimeline(query.value)
+                    .onStart {
+                        Timber.d("Stream started")
+                        connectionState.value = ConnectionState.Connected
+                    }
                     .catch { error ->
                         Timber.e(error, "Stream error: ${getErrorMessage(error)}")
                         connectionState.value = ConnectionState.Error(getErrorMessage(error))
