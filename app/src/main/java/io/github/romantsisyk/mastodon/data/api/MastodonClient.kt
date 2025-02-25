@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -29,6 +30,11 @@ class MastodonClient @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun streamTimeline(query: SearchQuery): Flow<TimelineItem> {
+        if (query == SearchQuery.EMPTY) {
+            Timber.d("Empty search query, returning empty flow")
+            connectionState.value = ConnectionState.Disconnected
+            return flow { }
+        }
         Timber.d("Starting timeline stream for query: ${query.value}")
 
         return networkMonitor.networkStatus

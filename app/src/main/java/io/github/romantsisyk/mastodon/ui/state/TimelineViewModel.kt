@@ -181,19 +181,18 @@ class TimelineViewModel @Inject constructor(
     }
 
     fun clearSearch() {
-        _uiState.update {
-            it.copy(
-                searchQuery = "",
-                isLoading = true,
-                items = emptyList()
-            )
-        }
-
         analyticsTracker.trackEvent(EVENT_SEARCH_CLEARED)
-
         viewModelScope.launch {
-            delay(SEARCH_DEBOUNCE_DELAY)
             searchDebouncer.accept("")
+            delay(SEARCH_DEBOUNCE_DELAY * 3)
+            _uiState.update {
+                it.copy(
+                    searchQuery = "",
+                    isLoading = false,
+                    items = emptyList(),
+                    error = null
+                )
+            }
         }
     }
 
@@ -233,6 +232,4 @@ class TimelineViewModel @Inject constructor(
 private fun <T> Flow<T>.bufferTimeout(
     timeoutMillis: Long = SEARCH_DEBOUNCE_DELAY,
     bufferSize: Int = DEFAULT_BUFFER_SIZE
-): Flow<T> =
-    buffer(bufferSize).onEach { delay(timeoutMillis) }
-
+): Flow<T> = buffer(bufferSize).onEach { delay(timeoutMillis) }
