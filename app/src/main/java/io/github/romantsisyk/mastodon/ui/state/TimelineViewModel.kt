@@ -227,13 +227,9 @@ class TimelineViewModel @Inject constructor(
 
     private fun String.containsAnyOf(vararg keywords: String): Boolean =
         keywords.any { this.contains(it, ignoreCase = true) }
-
-
 }
 
 private fun <T> Flow<T>.bufferTimeout(
     timeoutMillis: Long = SEARCH_DEBOUNCE_DELAY,
     bufferSize: Int = DEFAULT_BUFFER_SIZE
-): Flow<T> =
-    buffer(bufferSize).onEach { delay(timeoutMillis) }
-
+): Flow<T> = buffer(bufferSize).onEach { delay(timeoutMillis) }
