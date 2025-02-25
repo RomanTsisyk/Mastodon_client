@@ -8,39 +8,61 @@ import io.github.romantsisyk.mastodon.utils.AppConstants.CLEANUP_INTERVAL_MS
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class TimelineCacheManager @Inject constructor(
-    private val database: TimelineDatabase,
+    val database: TimelineDatabase,
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
+    private val isCleanupRunning = AtomicBoolean(false)
+    private var cleanupJob: Job? = null
+
     init {
         Timber.d("Initializing TimelineCacheManager")
         startCleanupJob()
     }
 
     private fun startCleanupJob() {
+        if (isCleanupRunning.getAndSet(true)) {
+            Timber.d("Cleanup job is already running")
+            return
+        }
+
         Timber.d("Starting cleanup job")
-        scope.launch(dispatcher) {
+        cleanupJob = scope.launch(SupervisorJob() + dispatcher) {
             try {
                 while (true) {
                     Timber.d("Running periodic cleanup")
-                    val currentTime = System.currentTimeMillis()
-                    val deletedCount = database.timelineDao().deleteExpired(currentTime)
-                    Timber.d("Cleanup complete. Removed $deletedCount expired items")
-                    kotlinx.coroutines.delay(CLEANUP_INTERVAL_MS)
+                    try {
+                        val currentTime = System.currentTimeMillis()
+                        val deletedCount = database.timelineDao().deleteExpired(currentTime)
+                        Timber.d("Cleanup complete. Removed $deletedCount expired items")
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error during cleanup operation")
+                        throw e
+                    }
+                    delay(CLEANUP_INTERVAL_MS)
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error in cleanup job")
+                isCleanupRunning.set(false)
+                delay(CLEANUP_INTERVAL_MS * 2)
                 startCleanupJob()
+            } finally {
+                isCleanupRunning.set(false)
             }
         }
     }
@@ -52,6 +74,7 @@ class TimelineCacheManager @Inject constructor(
             .map { entities ->
                 entities.map { it.toDomain() }
             }
+            .flowOn(dispatcher)
             .catch { e ->
                 Timber.e(e, "Error mapping cached items")
                 emit(emptyList())
@@ -68,7 +91,7 @@ class TimelineCacheManager @Inject constructor(
             )
             Timber.d("Successfully cached ${items.size} items")
         } catch (e: Exception) {
-            Timber.e(e, "Error caching items")
+            Timber.e(e, "Error caching items: ${e.message}")
             throw e
         }
     }
@@ -79,7 +102,7 @@ class TimelineCacheManager @Inject constructor(
             val deletedCount = database.timelineDao().deleteById(id.value)
             Timber.d("Successfully deleted $deletedCount items")
         } catch (e: Exception) {
-            Timber.e(e, "Error deleting item")
+            Timber.e(e, "Error deleting item: ${e.message}")
             throw e
         }
     }
