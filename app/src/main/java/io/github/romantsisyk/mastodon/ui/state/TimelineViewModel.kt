@@ -181,19 +181,18 @@ class TimelineViewModel @Inject constructor(
     }
 
     fun clearSearch() {
-        _uiState.update {
-            it.copy(
-                searchQuery = "",
-                isLoading = true,
-                items = emptyList()
-            )
-        }
-
         analyticsTracker.trackEvent(EVENT_SEARCH_CLEARED)
-
         viewModelScope.launch {
-            delay(SEARCH_DEBOUNCE_DELAY)
             searchDebouncer.accept("")
+            delay(SEARCH_DEBOUNCE_DELAY * 3)
+            _uiState.update {
+                it.copy(
+                    searchQuery = "",
+                    isLoading = false,
+                    items = emptyList(),
+                    error = null
+                )
+            }
         }
     }
 
@@ -228,6 +227,8 @@ class TimelineViewModel @Inject constructor(
 
     private fun String.containsAnyOf(vararg keywords: String): Boolean =
         keywords.any { this.contains(it, ignoreCase = true) }
+
+
 }
 
 private fun <T> Flow<T>.bufferTimeout(
